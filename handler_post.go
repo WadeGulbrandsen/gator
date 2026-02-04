@@ -13,7 +13,7 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 	if len(cmd.args) > 0 {
 		new_limit, err := strconv.Atoi(cmd.args[0])
 		if err != nil {
-			return fmt.Errorf("Usage: %s <num_posts>", cmd.name)
+			return fmt.Errorf("Usage: %s [num_posts]", cmd.name)
 		}
 		limit = new_limit
 	}
