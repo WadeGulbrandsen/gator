@@ -40,6 +40,24 @@ func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) 
 	}
 }
 
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.args) == 0 {
+		return fmt.Errorf("The unfollow command requires a url")
+	}
+	feed, err := s.db.GetFeed(context.Background(), cmd.args[0])
+	if err != nil {
+		return err
+	}
+	if err := s.db.DeleteFeedFollow(
+		context.Background(),
+		database.DeleteFeedFollowParams{UserID: user.ID, FeedID: feed.ID},
+	); err != nil {
+		return err
+	}
+	fmt.Printf("%s is no longer following %s", user.Name, feed.Name)
+	return nil
+}
+
 func handlerFollowing(s *state, cmd command, user database.User) error {
 	following, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
