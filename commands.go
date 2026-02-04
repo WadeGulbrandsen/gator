@@ -30,6 +30,54 @@ func (c *commands) register(name string, f func(*state, command) error) {
 	c.cmds[name] = f
 }
 
+func handlerFeeds(s *state, cmd command) error {
+	feeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return nil
+	}
+	for _, feed := range feeds {
+		fmt.Printf("%s (%s) - %s\n", feed.Name, feed.Url, feed.UserName)
+	}
+	return nil
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.args) < 2 {
+		return fmt.Errorf("addfeed needs a name and url")
+	}
+
+	user, err := s.db.GetUser(context.Background(), s.cfg.User_Name)
+
+	if err != nil {
+		return err
+	}
+
+	feed, err := s.db.CreateFeed(
+		context.Background(),
+		database.CreateFeedParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			Name:      cmd.args[0],
+			Url:       cmd.args[1],
+			UserID:    user.ID,
+		})
+	if err != nil {
+		return err
+	}
+	fmt.Println(feed)
+	return nil
+}
+
+func handlerAgg(s *state, cmd command) error {
+	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		return err
+	}
+	fmt.Println(*feed)
+	return nil
+}
+
 func handlerUsers(s *state, cmd command) error {
 	users, err := s.db.GetUsers(context.Background())
 	if err != nil {
