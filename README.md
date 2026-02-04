@@ -33,7 +33,7 @@ Repo for https://www.boot.dev/courses/build-blog-aggregator-golang
 | `gator browse [num_posts]`             | Current user see the `num_posts` most recent posts from the feeds they are following. `num_posts` defaults to `2` |
 
 Options in triangular brackets are required and options in square brackets are optional.
-If the value has spaces enclose the entire value in quotes.
+If the value has spaces enclose the entire value in quotes For example:
 
 ```shell
 gator addfeed "Boot.dev Blog" "https://blog.boot.dev/index.xml"
