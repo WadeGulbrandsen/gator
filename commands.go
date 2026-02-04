@@ -30,11 +30,17 @@ func (c *commands) register(name string, f func(*state, command) error) {
 	c.cmds[name] = f
 }
 
-func handlerFollowing(s *state, cmd command) error {
-	user, err := s.db.GetUser(context.Background(), s.cfg.User_Name)
-	if err != nil {
-		return err
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, c command) error {
+		user, err := s.db.GetUser(context.Background(), s.cfg.User_Name)
+		if err != nil {
+			return err
+		}
+		return handler(s, c, user)
 	}
+}
+
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	following, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
 		return err
@@ -45,15 +51,11 @@ func handlerFollowing(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) == 0 {
 		return fmt.Errorf("The follow command requires a url")
 	}
 	feed, err := s.db.GetFeed(context.Background(), cmd.args[0])
-	if err != nil {
-		return err
-	}
-	user, err := s.db.GetUser(context.Background(), s.cfg.User_Name)
 	if err != nil {
 		return err
 	}
@@ -84,15 +86,9 @@ func handlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) < 2 {
 		return fmt.Errorf("addfeed needs a name and url")
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.cfg.User_Name)
-
-	if err != nil {
-		return err
 	}
 
 	feed, err := s.db.CreateFeed(
