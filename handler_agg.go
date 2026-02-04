@@ -4,7 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
+
+	"github.com/WadeGulbrandsen/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 func handlerAgg(s *state, cmd command) error {
@@ -38,7 +42,46 @@ func scrapeFeeds(s *state) {
 		return
 	}
 	for _, item := range feedData.Channel.Item {
-		fmt.Printf("Found post: %s\n", item.Title)
+		if err := savePost(s, feed, item); err != nil {
+			log.Println(err)
+		}
 	}
 	log.Printf("Feed %s collected, %v posts found\n", feed.Name, len(feedData.Channel.Item))
+}
+
+func savePost(s *state, feed database.Feed, item RSSItem) error {
+	pub_time, err := parseTime(item.PubDate)
+	if err != nil {
+		return fmt.Errorf("Error parsing time: %w", err)
+	}
+	if _, err := s.db.CreatePost(
+		context.Background(),
+		database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: item.Description,
+			PublishedAt: pub_time,
+			FeedID:      feed.ID,
+		},
+	); err != nil {
+		if strings.Contains(err.Error(), "posts_url_key") {
+			return nil
+		}
+		return fmt.Errorf("Could not create post: %w", err)
+	}
+	return nil
+}
+
+func parseTime(time_string string) (time.Time, error) {
+	layouts := []string{time.RFC1123Z, time.RFC1123}
+	for _, layout := range layouts {
+		t, err := time.Parse(layout, time_string)
+		if err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("Could not parse %q to a timestamp", time_string)
 }
