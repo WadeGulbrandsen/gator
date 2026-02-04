@@ -30,6 +30,49 @@ func (c *commands) register(name string, f func(*state, command) error) {
 	c.cmds[name] = f
 }
 
+func handlerFollowing(s *state, cmd command) error {
+	user, err := s.db.GetUser(context.Background(), s.cfg.User_Name)
+	if err != nil {
+		return err
+	}
+	following, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
+	if err != nil {
+		return err
+	}
+	for _, follow := range following {
+		fmt.Println(follow.FeedName)
+	}
+	return nil
+}
+
+func handlerFollow(s *state, cmd command) error {
+	if len(cmd.args) == 0 {
+		return fmt.Errorf("The follow command requires a url")
+	}
+	feed, err := s.db.GetFeed(context.Background(), cmd.args[0])
+	if err != nil {
+		return err
+	}
+	user, err := s.db.GetUser(context.Background(), s.cfg.User_Name)
+	if err != nil {
+		return err
+	}
+	follow, err := s.db.CreateFeedFollow(
+		context.Background(),
+		database.CreateFeedFollowParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			UserID:    user.ID,
+			FeedID:    feed.ID,
+		})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s is now following %s", follow.UserName, follow.FeedName)
+	return nil
+}
+
 func handlerFeeds(s *state, cmd command) error {
 	feeds, err := s.db.GetFeeds(context.Background())
 	if err != nil {
@@ -65,7 +108,19 @@ func handlerAddFeed(s *state, cmd command) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(feed)
+	follow, err := s.db.CreateFeedFollow(
+		context.Background(),
+		database.CreateFeedFollowParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			UserID:    user.ID,
+			FeedID:    feed.ID,
+		})
+	if err != nil {
+		return err
+	}
+	fmt.Println(follow)
 	return nil
 }
 

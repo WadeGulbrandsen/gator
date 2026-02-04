@@ -10,6 +10,9 @@ VALUES (
 )
 RETURNING *;
 
+-- name: GetFeed :one
+SELECT * FROM feeds WHERE url = $1;
+
 -- name: GetFeeds :many
 SELECT feeds.id,
     feeds.created_at,
@@ -18,5 +21,5 @@ SELECT feeds.id,
     feeds.url,
     users.name AS user_name
 FROM feeds
-JOIN users
+INNER JOIN users
 ON feeds.user_id = users.id;
