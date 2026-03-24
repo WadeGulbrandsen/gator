@@ -4,6 +4,8 @@ Feed aggreGATOR
 
 Repo for https://www.boot.dev/courses/build-blog-aggregator-golang
 
+TypeScript Version: https://github.com/WadeGulbrandsen/tsgator
+
 ## Installation
 
 1. Install PostgreSQL
